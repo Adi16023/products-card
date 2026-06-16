@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const mongoose = require('mongoose');
 const Product = require('./models/Product');
 
@@ -9,7 +9,7 @@ const products = [
 ];
 
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/products-card', {
+  .connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/products-card', {
     serverSelectionTimeoutMS: 5000,
   })
   .then(async () => {
