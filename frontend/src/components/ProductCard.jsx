@@ -26,7 +26,21 @@ export default function ProductCard({ product, onView, onAddToCart, inCart }) {
         </button>
 
         <StarRating value={avgRating} count={product.ratings?.length} size="sm" />
+<p className="product-card-description">
+  {product.description}
+</p>
 
+<p className="product-card-stock">
+  Stock: {product.stockQuantity}
+</p>
+
+<p className="product-card-sku">
+  SKU: {product.sku}
+</p>
+
+<p className="product-card-status">
+  {product.inStock ? "✅ In Stock" : "❌ Out of Stock"}
+</p>
         <div className="product-card-price">
           {salePrice ? (
             <>

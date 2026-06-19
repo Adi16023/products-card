@@ -12,44 +12,8 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/products', async (req, res) => {
-  const products = await Product.find().populate('relatedProducts', 'name sku price');
+  const products = await Product.find();
   res.json(products);
-});
-
-app.post('/api/products', async (req, res) => {
-  try {
-    const product = await Product.create(req.body);
-    res.status(201).json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.put('/api/products/:id', async (req, res) => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate('relatedProducts', 'name sku price');
-
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-
-    res.json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.delete('/api/products/:id', async (req, res) => {
-  const product = await Product.findByIdAndDelete(req.params.id);
-
-  if (!product) {
-    return res.status(404).json({ error: 'Product not found' });
-  }
-
-  res.json({ message: 'Product deleted', id: product._id });
 });
 
 mongoose
@@ -63,3 +27,53 @@ mongoose
     console.error('MongoDB connection failed:', err.message);
     process.exit(1);
   });
+// CREATE
+app.post('/api/products', async (req, res) => {
+  try {
+    const now = new Date();
+
+    const createdAtUTC = now.toISOString();
+
+    const createdAtIST = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+    ).toISOString().replace('Z', '+05:30');
+
+    const product = await Product.create({
+      ...req.body,
+      createdAtUTC,
+      createdAtIST
+    });
+
+    res.status(201).json(product);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// UPDATE
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.status(200).json(product);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      message: 'Product deleted successfully'
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
