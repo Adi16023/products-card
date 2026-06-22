@@ -107,6 +107,50 @@ export default function App() {
     }
   };
 
+  setProducts((current) => current.filter((p) => p._id !== id));
+}
+
+async function handleSaveProduct(formData) {
+  if (editingProduct) {
+    const response = await fetch(
+      `/api/products/${editingProduct._id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    const updated = await response.json();
+
+    setProducts((current) =>
+      current.map((p) =>
+        p._id === updated._id ? updated : p
+      )
+    );
+  } else {
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...formData,
+        inStock: true,
+        isFeatured: false,
+        ratings: [4, 5],
+      }),
+    });
+
+    const newProduct = await response.json();
+
+    setProducts((current) => [...current, newProduct]);
+  }
+
+  setShowForm(false);
+}
   return (
     <main className="container">
       <h1>Products</h1>
