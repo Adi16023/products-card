@@ -16,6 +16,42 @@ app.get("/api/products", async (req, res) => {
   res.json(products);
 });
 
+app.post("/api/products", async (req, res) => {
+  try {
+    const product = await Product.create(req.body);
+    res.status(201).json(product);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    }).populate("relatedProducts", "name sku price");
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete("/api/products/:id", async (req, res) => {
+  const product = await Product.findByIdAndDelete(req.params.id);
+
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  res.json({ message: "Product deleted", id: product._id });
+});
+
 mongoose
   .connect(
     process.env.MONGODB_URI || "mongodb://localhost:27017/products-card",
