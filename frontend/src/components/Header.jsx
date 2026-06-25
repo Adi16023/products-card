@@ -1,4 +1,15 @@
-export default function Header({ cartCount, onCartClick ,onAddProduct,}) {
+import { useState } from 'react';
+
+export default function Header({
+  cartCount,
+  onCartClick,
+  onAddClick,
+  onEditClick,
+  onDeleteClick,
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [showProductMenu, setShowProductMenu] = useState(false);
+
   return (
     <header className="site-header">
       <div className="promo-bar">
@@ -20,25 +31,69 @@ export default function Header({ cartCount, onCartClick ,onAddProduct,}) {
           </nav>
 
           <div className="header-actions">
-            <button
-  type="button"
-  className="btn btn-primary"
-  onClick={onAddProduct}
->
-  Add Product
-</button>
-            <button type="button" className="icon-btn" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
-              </svg>
-            </button>
 
-            <button type="button" className="icon-btn" aria-label="Wishlist">
+            {/* Account Menu */}
+            <div className="account-menu">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Account"
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
+                </svg>
+              </button>
+
+              {showMenu && (
+                <div className="profile-dropdown">
+                  <button>👤 My Profile</button>
+
+                  <button>📦 Orders</button>
+
+                  <button>❤️ Wishlist</button>
+
+                  <button>⚙️ Settings</button>
+
+                  <button
+                    onClick={() =>
+                      setShowProductMenu(!showProductMenu)
+                    }
+                  >
+                    🛠 Product Management ▶
+                  </button>
+
+                  {showProductMenu && (
+                    <div className="submenu">
+                      <button onClick={onAddClick}>
+                        + Add Product
+                      </button>
+
+                      <button onClick={onEditClick}>
+                        ✏ Edit Product
+                      </button>
+
+                      <button onClick={onDeleteClick}>
+                        🗑 Delete Product
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Wishlist */}
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Wishlist"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 21s-7-4.35-9.33-8.5C.8 9.24 2.09 6 5.09 6A4.09 4.09 0 0 1 9 8.09 4.09 4.09 0 0 1 12.91 6c3 0 4.29 3.24 2.42 6.5C19 16.65 12 21 12 21Z" />
               </svg>
             </button>
 
+            {/* Cart */}
             <button
               type="button"
               className="icon-btn cart-btn"
@@ -48,8 +103,14 @@ export default function Header({ cartCount, onCartClick ,onAddProduct,}) {
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 4h-2l-1 2h2l3.6 7.59-1.35 2.44A2 2 0 0 0 10 18h9v-2h-8.42a.25.25 0 0 1-.22-.37L11 13h6.55a2 2 0 0 0 1.92-1.45L22 6H6.21l-.94-2ZM7 20a2 2 0 1 0 2-2 2 2 0 0 0-2 2Zm10 0a2 2 0 1 0 2-2 2 2 0 0 0-2 2Z" />
               </svg>
-              {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+
+              {cartCount > 0 && (
+                <span className="cart-count">
+                  {cartCount}
+                </span>
+              )}
             </button>
+
           </div>
         </div>
       </div>

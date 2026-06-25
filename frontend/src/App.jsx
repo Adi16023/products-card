@@ -1,21 +1,122 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Header from './components/Header';
+import Hero from './components/Hero';
+import FeaturedProducts from './components/FeaturedProducts';
+import SidebarFilters from './components/SidebarFilters';
+import ProductToolbar from './components/ProductToolbar';
+import ProductGrid from './components/ProductGrid';
+import ProductDetailModal from './components/ProductDetailModal';
+import CartDrawer from './components/CartDrawer';
+import AddProductModal from './components/AddProductModal';
+import EditProductModal from './components/EditProductModal';
+import DeleteProductModal from './components/DeleteProductModal';
+import LoadingGrid from './components/LoadingGrid';
+import Footer from './components/Footer';
+import { filterProducts, getDisplayPrice, sortProducts } from './utils/productHelpers';
 
 export default function App() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedEditProduct, setSelectedEditProduct] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const handleAddProduct = async (productData) => {
+   try {
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    });
 
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [image, setImage] = useState('');
+    if (!response.ok) {
+      throw new Error('Failed to add product');
+    }
 
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [editPrice, setEditPrice] = useState('');
-  const [editImage, setEditImage] = useState('');
-  const [tags, setTags] = useState('');
+    const newProduct = await response.json();
+
+    setProducts((prev) => [...prev, newProduct]);
+
+    setShowAddModal(false);
+
+    alert('Product added successfully!');
+  } catch (error) {
+    console.error(error);
+    alert('Error adding product');
+  }
+ };
+
+ const handleEditProduct = async (id, productData) => {
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update product');
+    }
+
+    const updatedProduct = await response.json();
+
+    setProducts((prev) =>
+      prev.map((product) =>
+        product._id === id ? updatedProduct : product
+      )
+    );
+
+    setShowEditModal(false);
+
+    alert('Product updated successfully');
+  } catch (error) {
+    console.error(error);
+    alert('Error updating product');
+  }
+}
+ const handleDeleteProduct = async (id) => {
+  try {
+    const response = await fetch(
+      `/api/products/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete');
+    }
+
+    setProducts((prev) =>
+      prev.filter((product) => product._id !== id)
+    );
+
+    setShowDeleteModal(false);
+
+    alert('Product deleted successfully');
+  } catch (error) {
+    console.error(error);
+    alert('Error deleting product');
+  }
+};
+
   // Fetch products
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('http://localhost:5000/api/products');
       const data = await res.json();
       setProducts(data);
     } catch (err) {
@@ -24,250 +125,157 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetch('/api/products')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load products');
+        return res.json();
+      })
+      .then(setProducts)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Add product
-  const addProduct = async (e) => {
-    e.preventDefault();
+  const categories = useMemo(
+    () => [...new Set(products.map((product) => product.category).filter(Boolean))],
+    [products]
+  );
 
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          price: Number(price),
-          image,
-          tags: tags.split(',').map(tag => tag.trim())
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to add product');
-      }
-
-      setName('');
-      setPrice('');
-      setImage('');
-      setTags('');
-
-      fetchProducts();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Delete product
-  const deleteProduct = async (id) => {
-    try {
-      await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-      });
-
-      setProducts(products.filter((product) => product._id !== id));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Start editing
-  const startEdit = (product) => {
-    setEditingId(product._id);
-    setEditName(product.name);
-    setEditPrice(product.price);
-    setEditImage(product.image);
-  };
-
-  // Update product
-  const updateProduct = async (id) => {
-    try {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: editName,
-          price: Number(editPrice),
-          image: editImage,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to update product');
-      }
-
-      setEditingId(null);
-      fetchProducts();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  setProducts((current) => current.filter((p) => p._id !== id));
-}
-
-async function handleSaveProduct(formData) {
-  if (editingProduct) {
-    const response = await fetch(
-      `/api/products/${editingProduct._id}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      }
-    );
-
-    const updated = await response.json();
-
-    setProducts((current) =>
-      current.map((p) =>
-        p._id === updated._id ? updated : p
-      )
-    );
-  } else {
-    const response = await fetch('/api/products', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...formData,
-        inStock: true,
-        isFeatured: false,
-        ratings: [4, 5],
-      }),
+  const filteredProducts = useMemo(() => {
+    const filtered = filterProducts(products, {
+      search,
+      category: selectedCategory,
+      inStockOnly,
+      featuredOnly,
     });
+    return sortProducts(filtered, sortBy);
+  }, [products, search, selectedCategory, inStockOnly, featuredOnly, sortBy]);
 
-    const newProduct = await response.json();
+  const featuredProducts = useMemo(
+    () => products.filter((product) => product.isFeatured).slice(0, 3),
+    [products]
+  );
 
-    setProducts((current) => [...current, newProduct]);
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.displayPrice, 0);
+
+  function handleAddToCart(product) {
+    setCartItems((current) => {
+      if (current.some((item) => item._id === product._id)) return current;
+
+      return [
+        ...current,
+        {
+          _id: product._id,
+          name: product.name,
+          image: product.image,
+          displayPrice: getDisplayPrice(product),
+        },
+      ];
+    });
+    setCartOpen(true);
   }
 
-  setShowForm(false);
-}
+  function handleRemoveFromCart(productId) {
+    setCartItems((current) => current.filter((item) => item._id !== productId));
+  }
+
   return (
-    <main className="container">
-      <h1>Products</h1>
+    <div className="app">
+      <Header cartCount={cartItems.length} 
+      onCartClick={() => setCartOpen(true)} 
+      onAddClick={() => setShowAddModal(true)}
+      onEditClick={() => {
+        if (products.length === 0) {
+          alert('No products available');
+          return;
+        }
+        setShowEditModal(true);
+     }}
+     onDeleteClick={() => {
+       if (products.length === 0) {
+        alert('No products available');
+        return;
+      }
+      setShowDeleteModal(true);
+    }}
+      />
+      <Hero />
 
-      {/* Add Product Form */}
-      <form onSubmit={addProduct} style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Product Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
+      <main className="storefront" id="shop">
+        {error && <p className="error-banner">{error}</p>}
+
+        <FeaturedProducts
+          products={featuredProducts}
+          onView={setSelectedProduct}
+          onAddToCart={handleAddToCart}
+          cartItems={cartItems}
         />
 
-        <input
-          type="number"
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          required
-        />
+        <section className="catalog">
+         <SidebarFilters
+           categories={categories}
+           selectedCategory={selectedCategory}
+           onCategoryChange={setSelectedCategory}
+           inStockOnly={inStockOnly}
+           onInStockChange={setInStockOnly}
+           featuredOnly={featuredOnly}
+           onFeaturedChange={setFeaturedOnly}
+         />
 
-        <input
-          type="text"
-          placeholder="Image URL"
-          value={image}
-          onChange={(e) => setImage(e.target.value)}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Tags (comma separated)"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-/>
-        <button type="submit">Add Product</button>
-      </form>
-
-      {/* Product List */}
-      <div className="grid">
-        {products.map((product) => (
-          <article key={product._id} className="card">
-            <img
-              src={product.image}
-              alt={product.name}
-              style={{
-                width: '100%',
-                height: '200px',
-                objectFit: 'cover',
-              }}
+          <div className="catalog-main">
+            <ProductToolbar
+              search={search}
+              onSearchChange={setSearch}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              resultCount={filteredProducts.length}
             />
 
-            {editingId === product._id ? (
-              <>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-
-                <input
-                  type="number"
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
-                />
-
-                <input
-                  type="text"
-                  value={editImage}
-                  onChange={(e) => setEditImage(e.target.value)}
-                />
-
-                <button
-                  onClick={() => updateProduct(product._id)}
-                  style={{ marginRight: '8px' }}
-                >
-                  Save
-                </button>
-
-                <button onClick={() => setEditingId(null)}>
-                  Cancel
-                </button>
-              </>
+            {loading ? (
+              <LoadingGrid />
             ) : (
-              <>
-                <h2>{product.name}</h2>
-
-                <p>
-                  <strong>₹{product.price}</strong>
-                </p>
-
-                <button
-                  onClick={() => startEdit(product)}
-                  style={{
-                    marginRight: '8px',
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={() => deleteProduct(product._id)}
-                  style={{
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
-              </>
+              <ProductGrid
+                products={filteredProducts}
+                onView={setSelectedProduct}
+                onAddToCart={handleAddToCart}
+                cartItems={cartItems}
+              />
             )}
-          </article>
-        ))}
-      </div>
-    </main>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+
+      <ProductDetailModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={handleAddToCart}
+        inCart={cartItems.some((item) => item._id === selectedProduct?._id)}
+      />
+      <AddProductModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddProduct}
+      /> 
+      <EditProductModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        products={products}
+        onSave={handleEditProduct}
+      />
+      <DeleteProductModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        products={products}
+        onDelete={handleDeleteProduct}
+      />
+      <CartDrawer
+        open={cartOpen}
+        items={cartItems}
+        onClose={() => setCartOpen(false)}
+        onRemove={handleRemoveFromCart}
+        total={cartTotal}
+      />
+    </div>
   );
 }

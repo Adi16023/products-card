@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, onView, onAddToCart, cartItems, onEdit,onDelete, }) {
+export default function ProductGrid({ products, onView, onAddToCart, cartItems }) {
   if (products.length === 0) {
     return (
       <div className="empty-state">
@@ -19,8 +19,6 @@ export default function ProductGrid({ products, onView, onAddToCart, cartItems, 
           onView={onView}
           onAddToCart={onAddToCart}
           inCart={cartItems.some((item) => item._id === product._id)}
-          onEdit={onEdit}
-          onDelete={onDelete}
         />
       ))}
     </div>

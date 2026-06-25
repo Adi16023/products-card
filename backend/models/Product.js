@@ -12,6 +12,11 @@ const productSchema = new mongoose.Schema({
     default: null        // NULL
   },
 
+  inStock: {
+    type: Boolean,
+    default: true        // Default to in stock
+  },
+
   createdAtUTC: {
     type: Date,
     default: Date.now    // DateTime UTC

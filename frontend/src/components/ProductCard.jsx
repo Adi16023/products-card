@@ -2,7 +2,7 @@ import Badge from './Badge';
 import StarRating from './StarRating';
 import { averageRating, discountedPrice } from '../utils/productHelpers';
 
-export default function ProductCard({ product, onView, onAddToCart, inCart,onEdit,onDelete, }) {
+export default function ProductCard({ product, onView, onAddToCart, inCart }) {
   const salePrice = discountedPrice(product.price, product.discountPercent);
   const avgRating = averageRating(product.ratings);
 
@@ -15,7 +15,6 @@ export default function ProductCard({ product, onView, onAddToCart, inCart,onEdi
             <Badge variant="sale">-{product.discountPercent}%</Badge>
           )}
           {product.isFeatured && <Badge variant="featured">Featured</Badge>}
-          {!product.inStock && <Badge variant="out">Sold out</Badge>}
         </div>
       </button>
 
@@ -39,37 +38,16 @@ export default function ProductCard({ product, onView, onAddToCart, inCart,onEdi
         </div>
 
         <div className="product-card-actions">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => onView(product)}
-          >
+          <button type="button" className="btn btn-ghost" onClick={() => onView(product)}>
             View details
           </button>
-
           <button
             type="button"
             className="btn btn-primary"
             disabled={!product.inStock}
             onClick={() => onAddToCart(product)}
-        >
+          >
             {inCart ? 'Added' : 'Add to cart'}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => onEdit(product)}
-          >
-            Edit
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => onDelete(product._id)}
-          >
-            Delete
           </button>
         </div>
       </div>
