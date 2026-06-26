@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+const fs = require('fs');
+const content = `import { useEffect, useMemo, useState } from "react";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import FeaturedProducts from "./components/FeaturedProducts";
@@ -33,6 +34,7 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const fetchProducts = async () => {
     setLoading(true);
     setError("");
@@ -40,14 +42,14 @@ export default function App() {
     try {
       const response = await fetch("/api/products");
       if (!response.ok) {
-        throw new Error("Unable to load products");
+        throw new Error("Failed to load products");
       }
 
       const data = await response.json();
       setProducts(data);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Unable to fetch products");
+      setError(err.message || "Unable to load products");
     } finally {
       setLoading(false);
     }
@@ -57,12 +59,12 @@ export default function App() {
     fetchProducts();
   }, []);
 
-  const categories = useMemo(() => {
-    const uniqueCategories = new Set(
-      products.map((product) => product.category).filter(Boolean),
-    );
-    return Array.from(uniqueCategories);
-  }, [products]);
+  const categories = useMemo(
+    () => [
+      ...new Set(products.map((product) => product.category).filter(Boolean)),
+    ],
+    [products],
+  );
 
   const filteredProducts = useMemo(() => {
     const filtered = filterProducts(products, {
@@ -80,14 +82,13 @@ export default function App() {
     [products],
   );
 
-  const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.displayPrice,
-    0,
-  );
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.displayPrice, 0);
 
   const handleAddToCart = (product) => {
     setCartItems((current) => {
-      if (current.some((item) => item._id === product._id)) return current;
+      if (current.some((item) => item._id === product._id)) {
+        return current;
+      }
 
       return [
         ...current,
@@ -99,12 +100,10 @@ export default function App() {
         },
       ];
     });
-
-    setCartOpen(true);
   };
 
-  const handleRemoveFromCart = (productId) => {
-    setCartItems((current) => current.filter((item) => item._id !== productId));
+  const handleRemoveFromCart = (id) => {
+    setCartItems((current) => current.filter((item) => item._id !== id));
   };
 
   const handleAddProduct = async (productData) => {
@@ -124,10 +123,9 @@ export default function App() {
       const newProduct = await response.json();
       setProducts((prev) => [...prev, newProduct]);
       setShowAddModal(false);
-      alert("Product added successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Error adding product");
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Error adding product");
     }
   };
 
@@ -147,15 +145,12 @@ export default function App() {
 
       const updatedProduct = await response.json();
       setProducts((prev) =>
-        prev.map((product) =>
-          product._id === id ? updatedProduct : product,
-        ),
+        prev.map((product) => (product._id === id ? updatedProduct : product)),
       );
       setShowEditModal(false);
-      alert("Product updated successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Error updating product");
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Error updating product");
     }
   };
 
@@ -170,12 +165,10 @@ export default function App() {
       }
 
       setProducts((prev) => prev.filter((product) => product._id !== id));
-      setCartItems((current) => current.filter((item) => item._id !== id));
       setShowDeleteModal(false);
-      alert("Product deleted successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Error deleting product");
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Error deleting product");
     }
   };
 
@@ -184,56 +177,46 @@ export default function App() {
       <Header cartCount={cartItems.length} onCartClick={() => setCartOpen(true)} />
       <Hero />
 
-      <main className="storefront">
-        <section id="shop" className="storefront">
-          <ProductToolbar
-            search={search}
-            onSearchChange={setSearch}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            resultCount={filteredProducts.length}
+      <main className="site-content">
+        <div className="catalog-layout">
+          <SidebarFilters
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            inStockOnly={inStockOnly}
+            onInStockChange={setInStockOnly}
+            featuredOnly={featuredOnly}
+            onFeaturedChange={setFeaturedOnly}
+            onAddClick={() => setShowAddModal(true)}
+            onEditClick={() => setShowEditModal(true)}
+            onDeleteClick={() => setShowDeleteModal(true)}
           />
 
-          {loading ? (
-            <LoadingGrid />
-          ) : error ? (
-            <div className="error-banner">{error}</div>
-          ) : (
-            <div className="catalog">
-              <SidebarFilters
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                inStockOnly={inStockOnly}
-                onInStockChange={setInStockOnly}
-                featuredOnly={featuredOnly}
-                onFeaturedChange={setFeaturedOnly}
-                onAddClick={() => setShowAddModal(true)}
-                onEditClick={() => {
-                  if (products.length === 0) {
-                    alert("No products available");
-                    return;
-                  }
-                  setShowEditModal(true);
-                }}
-                onDeleteClick={() => {
-                  if (products.length === 0) {
-                    alert("No products available");
-                    return;
-                  }
-                  setShowDeleteModal(true);
-                }}
-              />
+          <section className="catalog-main" id="shop">
+            <ProductToolbar
+              search={search}
+              onSearchChange={setSearch}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              resultCount={filteredProducts.length}
+            />
 
+            {loading ? (
+              <LoadingGrid />
+            ) : error ? (
+              <div className="error-state">
+                <p>{error}</p>
+              </div>
+            ) : (
               <ProductGrid
                 products={filteredProducts}
                 onView={setSelectedProduct}
                 onAddToCart={handleAddToCart}
                 cartItems={cartItems}
               />
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        </div>
 
         <FeaturedProducts
           products={featuredProducts}
@@ -278,4 +261,5 @@ export default function App() {
     </div>
   );
 }
-
+`;
+fs.writeFileSync('App.jsx', content, 'utf8');

@@ -1,6 +1,6 @@
 import Badge from './Badge';
 import StarRating from './StarRating';
-import { averageRating, discountedPrice, formatDate } from '../utils/productHelpers';
+import { averageRating, discountedPrice, formatDate, isProductInStock } from '../utils/productHelpers';
 
 function DetailField({ label, value }) {
   if (value === undefined || value === null || value === '') return null;
@@ -18,6 +18,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, inCa
 
   const salePrice = discountedPrice(product.price, product.discountPercent);
   const avgRating = averageRating(product.ratings);
+  const inStock = isProductInStock(product);
   const attributes = product.attributes ? Object.entries(product.attributes) : [];
   const metadata = product.metadata ? Object.entries(product.metadata) : [];
 
@@ -39,8 +40,8 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, inCa
             <img src={product.image} alt={product.name} />
             <div className="modal-badges">
               {product.isFeatured && <Badge variant="featured">Featured</Badge>}
-              <Badge variant={product.inStock ? 'stock' : 'out'}>
-                {product.inStock ? 'In stock' : 'Out of stock'}
+              <Badge variant={inStock ? 'stock' : 'out'}>
+                {inStock ? 'In stock' : 'Out of stock'}
               </Badge>
             </div>
           </div>
@@ -78,7 +79,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, inCa
               <button
                 type="button"
                 className="btn btn-primary btn-lg"
-                disabled={!product.inStock}
+                disabled={!inStock}
                 onClick={() => onAddToCart(product)}
               >
                 {inCart ? 'Added to cart' : 'Add to cart'}

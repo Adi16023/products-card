@@ -1,10 +1,11 @@
 import Badge from './Badge';
 import StarRating from './StarRating';
-import { averageRating, discountedPrice } from '../utils/productHelpers';
+import { averageRating, discountedPrice, isProductInStock } from '../utils/productHelpers';
 
 export default function ProductCard({ product, onView, onAddToCart, inCart }) {
   const salePrice = discountedPrice(product.price, product.discountPercent);
   const avgRating = averageRating(product.ratings);
+  const inStock = isProductInStock(product);
 
   return (
     <article className="product-card">
@@ -15,7 +16,7 @@ export default function ProductCard({ product, onView, onAddToCart, inCart }) {
             <Badge variant="sale">-{product.discountPercent}%</Badge>
           )}
           {product.isFeatured && <Badge variant="featured">Featured</Badge>}
-          {!product.inStock && <Badge variant="out">Sold out</Badge>}
+          {!inStock && <Badge variant="out">Sold out</Badge>}
         </div>
       </button>
 
@@ -59,7 +60,7 @@ export default function ProductCard({ product, onView, onAddToCart, inCart }) {
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!product.inStock}
+            disabled={!inStock}
             onClick={() => onAddToCart(product)}
           >
             {inCart ? 'Added' : 'Add to cart'}

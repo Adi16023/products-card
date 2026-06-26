@@ -1012,3 +1012,44 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+/* ===== Admin CRUD Buttons ===== */
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.add-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.add-btn:hover {
+  background: var(--primary-dark);
+}
+
+.edit-btn {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.delete-btn {
+  background: var(--danger);
+  color: white;
+}
+
+.delete-btn:hover {
+  opacity: 0.9;
+}

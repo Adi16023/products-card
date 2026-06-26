@@ -18,6 +18,12 @@ export function getDisplayPrice(product) {
   return discountedPrice(product.price, product.discountPercent) ?? product.price;
 }
 
+export function isProductInStock(product) {
+  if (product?.inStock === false) return false;
+  if (product?.stockQuantity === 0) return false;
+  return true;
+}
+
 export function sortProducts(products, sortBy) {
   const sorted = [...products];
 
@@ -42,7 +48,7 @@ export function filterProducts(products, { search, category, inStockOnly, featur
 
   return products.filter((product) => {
     if (category && category !== 'All' && product.category !== category) return false;
-    if (inStockOnly && !product.inStock) return false;
+    if (inStockOnly && !isProductInStock(product)) return false;
     if (featuredOnly && !product.isFeatured) return false;
 
     if (!query) return true;
