@@ -7,6 +7,9 @@ import ProductToolbar from './components/ProductToolbar';
 import ProductGrid from './components/ProductGrid';
 import ProductDetailModal from './components/ProductDetailModal';
 import CartDrawer from './components/CartDrawer';
+import AddProductModal from './components/AddProductModal';
+import EditProductModal from './components/EditProductModal';
+import DeleteProductModal from './components/DeleteProductModal';
 import LoadingGrid from './components/LoadingGrid';
 import Footer from './components/Footer';
 import { filterProducts, getDisplayPrice, sortProducts } from './utils/productHelpers';
@@ -23,16 +26,93 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedEditProduct, setSelectedEditProduct] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const handleAddProduct = async (productData) => {
+   try {
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    });
 
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [image, setImage] = useState('');
+    if (!response.ok) {
+      throw new Error('Failed to add product');
+    }
 
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [editPrice, setEditPrice] = useState('');
-  const [editImage, setEditImage] = useState('');
-  const [tags, setTags] = useState('');
+    const newProduct = await response.json();
+
+    setProducts((prev) => [...prev, newProduct]);
+
+    setShowAddModal(false);
+
+    alert('Product added successfully!');
+  } catch (error) {
+    console.error(error);
+    alert('Error adding product');
+  }
+ };
+
+ const handleEditProduct = async (id, productData) => {
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update product');
+    }
+
+    const updatedProduct = await response.json();
+
+    setProducts((prev) =>
+      prev.map((product) =>
+        product._id === id ? updatedProduct : product
+      )
+    );
+
+    setShowEditModal(false);
+
+    alert('Product updated successfully');
+  } catch (error) {
+    console.error(error);
+    alert('Error updating product');
+  }
+}
+ const handleDeleteProduct = async (id) => {
+  try {
+    const response = await fetch(
+      `/api/products/${id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete');
+    }
+
+    setProducts((prev) =>
+      prev.filter((product) => product._id !== id)
+    );
+
+    setShowDeleteModal(false);
+
+    alert('Product deleted successfully');
+  } catch (error) {
+    console.error(error);
+    alert('Error deleting product');
+  }
+};
+
   // Fetch products
   const fetchProducts = async () => {
     try {
@@ -114,15 +194,31 @@ export default function App() {
         />
 
         <section className="catalog">
-          <SidebarFilters
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            inStockOnly={inStockOnly}
-            onInStockChange={setInStockOnly}
-            featuredOnly={featuredOnly}
-            onFeaturedChange={setFeaturedOnly}
-          />
+         <SidebarFilters
+           categories={categories}
+           selectedCategory={selectedCategory}
+           onCategoryChange={setSelectedCategory}
+           inStockOnly={inStockOnly}
+           onInStockChange={setInStockOnly}
+           featuredOnly={featuredOnly}
+           onFeaturedChange={setFeaturedOnly}
+           onAddClick={() => setShowAddModal(true)}
+           onEditClick={() => {
+           if (products.length === 0) {
+              alert('No products available');
+              return;
+            }
+            setShowEditModal(true);
+          }}
+           onDeleteClick={() => {
+           if (products.length === 0) {
+             alert('No products available');
+             return;
+            }
+
+  setShowDeleteModal(true);
+}}
+         />
 
           <div className="catalog-main">
             <ProductToolbar
@@ -155,7 +251,23 @@ export default function App() {
         onAddToCart={handleAddToCart}
         inCart={cartItems.some((item) => item._id === selectedProduct?._id)}
       />
-
+      <AddProductModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddProduct}
+      /> 
+      <EditProductModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        products={products}
+        onSave={handleEditProduct}
+      />
+      <DeleteProductModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        products={products}
+        onDelete={handleDeleteProduct}
+      />
       <CartDrawer
         open={cartOpen}
         items={cartItems}
